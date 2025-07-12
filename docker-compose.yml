@@ -18,11 +18,14 @@ services:
     image: redis:latest
     ports:
       - "6380:6379"  # Changed from 6379 to 6380 to avoid port conflict
+    volumes:
+      - redis_data:/data
     networks:
       - property_network
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   property_network:
