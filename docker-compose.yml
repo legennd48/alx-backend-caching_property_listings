@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: property_listings_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5433:5432"  # Changed from 5432 to 5433 to avoid port conflict
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - property_network
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6380:6379"  # Changed from 6379 to 6380 to avoid port conflict
+    networks:
+      - property_network
+
+volumes:
+  postgres_data:
+
+networks:
+  property_network:
+    driver: bridge
