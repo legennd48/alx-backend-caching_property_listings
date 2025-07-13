@@ -24,4 +24,19 @@ urlpatterns = [
     # 2. Clean URLs - easy to remember and type
     # 3. Follows Django conventions for list views
     path('', views.property_list, name='property_list'),
+    
+    # Cache statistics endpoint - maps to /properties/cache/stats/
+    # Why cache stats endpoint is useful:
+    # 1. Monitor cache performance and hit ratios
+    # 2. Debug caching issues in development
+    # 3. Administrative monitoring in production
+    path('cache/stats/', views.cache_stats, name='cache_stats'),
+    
+    # Cache invalidation endpoint - maps to /properties/cache/invalidate/
+    # Why cache invalidation endpoint is needed:
+    # 1. Manual cache refresh when needed
+    # 2. Testing and debugging purposes
+    # 3. Administrative control over cache lifecycle
+    # 4. Force immediate data refresh
+    path('cache/invalidate/', views.invalidate_cache, name='invalidate_cache'),
 ]
