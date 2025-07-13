@@ -106,3 +106,191 @@ def get_cache_stats():
     }
     
     return stats
+
+def get_redis_cache_metrics():
+    """
+    Retrieves and analyzes Redis cache hit/miss metrics for performance monitoring.
+    
+    This function connects directly to the Redis instance to gather comprehensive
+    cache performance statistics that are essential for optimization and monitoring.
+    
+    Why Redis cache metrics are important:
+    1. Performance optimization - identify cache efficiency bottlenecks
+    2. Memory usage monitoring - track Redis memory consumption patterns
+    3. Hit ratio analysis - measure cache effectiveness (target: >80% hit ratio)
+    4. Capacity planning - determine when to scale Redis infrastructure
+    5. Troubleshooting - diagnose cache-related performance issues
+    6. Cost optimization - optimize cache size based on actual usage patterns
+    
+    Technical approach:
+    1. Connect to Redis using django_redis connection
+    2. Execute INFO command to get keyspace statistics
+    3. Parse keyspace_hits and keyspace_misses metrics
+    4. Calculate hit ratio percentage
+    5. Log metrics for monitoring/alerting systems
+    6. Return structured data for API consumption
+    
+    Returns:
+        dict: Comprehensive cache metrics including hit ratio, raw stats, and analysis
+    """
+    
+    try:
+        # Import django_redis to get direct Redis connection
+        # Why django_redis instead of redis-py directly:
+        # - Uses same connection pool as Django cache framework
+        # - Respects Django cache configuration settings
+        # - Maintains connection consistency across application
+        # - Handles Redis authentication and connection parameters automatically
+        from django_redis import get_redis_connection
+        
+        # Get the Redis connection from django_redis
+        # Uses 'default' cache backend configuration from settings.py
+        # This ensures we're monitoring the same Redis instance used for caching
+        redis_connection = get_redis_connection("default")
+        
+        # Execute Redis INFO command to get server statistics
+        # INFO command returns comprehensive Redis server information including:
+        # - Memory usage statistics
+        # - Client connection information  
+        # - Keyspace hit/miss statistics
+        # - Server configuration details
+        # - Replication information (if applicable)
+        redis_info = redis_connection.info()
+        
+        # Extract keyspace hit/miss statistics
+        # keyspace_hits: Total number of successful key lookups
+        # keyspace_misses: Total number of failed key lookups
+        # These are cumulative counters since Redis server startup
+        keyspace_hits = redis_info.get('keyspace_hits', 0)
+        keyspace_misses = redis_info.get('keyspace_misses', 0)
+        
+        # Calculate total operations for hit ratio computation
+        total_operations = keyspace_hits + keyspace_misses
+        
+        # Calculate hit ratio percentage
+        # Hit ratio is the key performance indicator for cache effectiveness
+        # Formula: (hits / total_operations) * 100
+        # Good hit ratios: >80% excellent, 60-80% good, <60% needs optimization
+        if total_operations > 0:
+            hit_ratio = (keyspace_hits / total_operations) * 100
+        else:
+            # Handle division by zero when no cache operations have occurred
+            hit_ratio = 0.0
+        
+        # Get additional Redis metrics for comprehensive monitoring
+        # used_memory: Current memory usage in bytes
+        # used_memory_human: Human-readable memory usage
+        # connected_clients: Number of active client connections
+        # total_commands_processed: Total commands executed since startup
+        used_memory = redis_info.get('used_memory', 0)
+        used_memory_human = redis_info.get('used_memory_human', '0B')
+        connected_clients = redis_info.get('connected_clients', 0)
+        total_commands = redis_info.get('total_commands_processed', 0)
+        
+        # Determine cache performance classification
+        # This helps with quick performance assessment and alerting
+        if hit_ratio >= 80:
+            performance_status = "Excellent"
+            performance_color = "green"
+        elif hit_ratio >= 60:
+            performance_status = "Good"
+            performance_color = "yellow"
+        elif hit_ratio >= 40:
+            performance_status = "Fair"
+            performance_color = "orange"
+        else:
+            performance_status = "Poor"
+            performance_color = "red"
+        
+        # Create comprehensive metrics dictionary
+        # This structure provides both raw data and computed insights
+        metrics = {
+            # Raw Redis statistics
+            'raw_metrics': {
+                'keyspace_hits': keyspace_hits,
+                'keyspace_misses': keyspace_misses,
+                'total_operations': total_operations,
+                'used_memory_bytes': used_memory,
+                'used_memory_human': used_memory_human,
+                'connected_clients': connected_clients,
+                'total_commands_processed': total_commands
+            },
+            
+            # Computed performance indicators
+            'performance_analysis': {
+                'hit_ratio_percentage': round(hit_ratio, 2),
+                'miss_ratio_percentage': round(100 - hit_ratio, 2),
+                'performance_status': performance_status,
+                'performance_color': performance_color,
+                'operations_per_second': 'N/A'  # Would need time-series data for accurate calculation
+            },
+            
+            # Cache efficiency insights
+            'efficiency_insights': {
+                'is_cache_effective': hit_ratio >= 60,
+                'needs_optimization': hit_ratio < 60,
+                'memory_efficiency': 'Normal' if used_memory < 100 * 1024 * 1024 else 'High',  # 100MB threshold
+                'recommendation': (
+                    'Cache performing well' if hit_ratio >= 80 else
+                    'Consider cache optimization' if hit_ratio >= 60 else
+                    'Cache strategy needs review'
+                )
+            },
+            
+            # Metadata for monitoring systems
+            'metadata': {
+                'timestamp': redis_info.get('server_time_usec', 0),
+                'redis_version': redis_info.get('redis_version', 'unknown'),
+                'cache_backend': 'Redis',
+                'monitoring_source': 'django_redis_connection'
+            }
+        }
+        
+        # Log metrics for monitoring and alerting systems
+        # This enables external monitoring tools to track cache performance
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(
+            f"Redis Cache Metrics: Hit Ratio: {hit_ratio:.2f}%, "
+            f"Hits: {keyspace_hits}, Misses: {keyspace_misses}, "
+            f"Memory: {used_memory_human}, Status: {performance_status}"
+        )
+        
+        # Console output for development debugging
+        print(f"📊 Redis Cache Metrics:")
+        print(f"   Hit Ratio: {hit_ratio:.2f}% ({performance_status})")
+        print(f"   Hits: {keyspace_hits:,}, Misses: {keyspace_misses:,}")
+        print(f"   Memory Usage: {used_memory_human}")
+        print(f"   Connected Clients: {connected_clients}")
+        
+        return metrics
+        
+    except ImportError as e:
+        # Handle case where django_redis is not installed
+        error_msg = "django_redis not available for direct Redis connection"
+        logger.error(f"Redis metrics error: {error_msg} - {e}")
+        
+        return {
+            'error': error_msg,
+            'status': 'unavailable',
+            'message': 'Install django_redis for Redis metrics functionality',
+            'fallback_recommendation': 'Use Django cache framework stats instead'
+        }
+        
+    except Exception as e:
+        # Handle Redis connection errors, authentication issues, etc.
+        error_msg = f"Failed to retrieve Redis cache metrics: {str(e)}"
+        logger.error(f"Redis metrics error: {error_msg}")
+        
+        return {
+            'error': error_msg,
+            'status': 'error',
+            'message': 'Check Redis connection and configuration',
+            'troubleshooting': [
+                'Verify Redis server is running',
+                'Check Django CACHES configuration',
+                'Verify Redis authentication credentials',
+                'Ensure network connectivity to Redis instance'
+            ]
+        }
