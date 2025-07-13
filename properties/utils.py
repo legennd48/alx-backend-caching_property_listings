@@ -165,14 +165,14 @@ def get_redis_cache_metrics():
         keyspace_hits = redis_info.get('keyspace_hits', 0)
         keyspace_misses = redis_info.get('keyspace_misses', 0)
         
-        # Calculate total operations for hit ratio computation
-        total_operations = keyspace_hits + keyspace_misses
+        # Calculate total requests for hit ratio computation
+        total_requests = keyspace_hits + keyspace_misses
         
         # Calculate hit ratio percentage
         # Hit ratio is the key performance indicator for cache effectiveness
-        # Formula: (hits / total_operations) * 100
+        # Formula: (hits / total_requests) * 100
         # Good hit ratios: >80% excellent, 60-80% good, <60% needs optimization
-        hit_ratio = (keyspace_hits / total_operations) * 100 if total_operations > 0 else 0
+        hit_ratio = (keyspace_hits / total_requests) * 100 if total_requests > 0 else 0
         
         # Get additional Redis metrics for comprehensive monitoring
         # used_memory: Current memory usage in bytes
@@ -206,7 +206,7 @@ def get_redis_cache_metrics():
             'raw_metrics': {
                 'keyspace_hits': keyspace_hits,
                 'keyspace_misses': keyspace_misses,
-                'total_operations': total_operations,
+                'total_requests': total_requests,
                 'used_memory_bytes': used_memory,
                 'used_memory_human': used_memory_human,
                 'connected_clients': connected_clients,
