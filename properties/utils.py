@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.core import serializers
 from .models import Property
 import json
+import logging
 
 def get_all_properties():
     """
@@ -171,11 +172,7 @@ def get_redis_cache_metrics():
         # Hit ratio is the key performance indicator for cache effectiveness
         # Formula: (hits / total_operations) * 100
         # Good hit ratios: >80% excellent, 60-80% good, <60% needs optimization
-        if total_operations > 0:
-            hit_ratio = (keyspace_hits / total_operations) * 100
-        else:
-            # Handle division by zero when no cache operations have occurred
-            hit_ratio = 0.0
+        hit_ratio = (keyspace_hits / total_operations) * 100 if total_operations > 0 else 0
         
         # Get additional Redis metrics for comprehensive monitoring
         # used_memory: Current memory usage in bytes
@@ -248,7 +245,6 @@ def get_redis_cache_metrics():
         
         # Log metrics for monitoring and alerting systems
         # This enables external monitoring tools to track cache performance
-        import logging
         logger = logging.getLogger(__name__)
         
         logger.info(
@@ -269,6 +265,7 @@ def get_redis_cache_metrics():
     except ImportError as e:
         # Handle case where django_redis is not installed
         error_msg = "django_redis not available for direct Redis connection"
+        logger = logging.getLogger(__name__)
         logger.error(f"Redis metrics error: {error_msg} - {e}")
         
         return {
@@ -281,6 +278,7 @@ def get_redis_cache_metrics():
     except Exception as e:
         # Handle Redis connection errors, authentication issues, etc.
         error_msg = f"Failed to retrieve Redis cache metrics: {str(e)}"
+        logger = logging.getLogger(__name__)
         logger.error(f"Redis metrics error: {error_msg}")
         
         return {
