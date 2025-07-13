@@ -80,7 +80,7 @@ DATABASES = {
         'NAME': 'property_listings_db',
         'USER': 'postgres',
         'PASSWORD': 'postgres123',
-        'HOST': 'localhost',  # Use 'postgres' when running in Docker
+        'HOST': 'localhost',  # postgres used when Docker is running
         'PORT': '5433',  # Updated port to match docker-compose
     }
 }
@@ -133,7 +133,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://localhost:6380/1',  # Updated port to match docker-compose
+        'LOCATION': 'redis://localhost:6380/1',  # redis used when Docker is running
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }

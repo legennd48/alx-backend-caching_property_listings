@@ -18,12 +18,21 @@ from . import views
 app_name = 'properties'
 
 urlpatterns = [
-    # Property list endpoint - maps to /properties/
+    # Property list endpoint with dual caching - maps to /properties/
+    # Uses both @cache_page (15 min) and low-level cache API (1 hour)
     # Why this URL pattern:
     # 1. RESTful design - GET /properties/ returns list of properties
     # 2. Clean URLs - easy to remember and type
     # 3. Follows Django conventions for list views
     path('', views.property_list, name='property_list'),
+    
+    # Property list with low-level cache only - maps to /properties/low-level/
+    # Uses only low-level cache API (1 hour), no HTTP response caching
+    # Why this endpoint is useful:
+    # 1. Demonstrates pure low-level caching without @cache_page
+    # 2. Better for APIs that need manual cache control
+    # 3. Useful for testing different caching strategies
+    path('low-level/', views.property_list_low_level_only, name='property_list_low_level'),
     
     # Cache statistics endpoint - maps to /properties/cache/stats/
     # Why cache stats endpoint is useful:
