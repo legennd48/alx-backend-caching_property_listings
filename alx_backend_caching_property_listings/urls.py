@@ -15,8 +15,21 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 urlpatterns = [
+    # Admin interface - for managing properties through Django admin
+    # Why admin is important:
+    # 1. Provides easy interface for content management
+    # 2. Allows non-technical users to add/edit properties
+    # 3. Built-in authentication and authorization
     path('admin/', admin.site.urls),
+    
+    # Properties app URLs - maps /properties/ to the properties app
+    # Why we use include():
+    # 1. Delegates URL handling to the app's urls.py
+    # 2. Keeps project urls.py clean and organized
+    # 3. Allows the app to define its own URL patterns
+    # 4. Makes the app more modular and reusable
+    path('properties/', include('properties.urls')),
 ]
