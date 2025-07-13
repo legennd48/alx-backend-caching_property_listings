@@ -244,3 +244,6 @@ Thumbs.db
 
 # Project specific
 test_setup.py
+
+# Additional project directories - keep tracked
+# alx_backend_caching_property_listings/ - This directory should be tracked
